@@ -1,0 +1,76 @@
+% SBC Template - Article Style
+% Based on the official SBC LaTeX template for proceedings
+% https://www.sbc.org.br/documentos-da-sbc/category/169-templates-para-artigos-e-capitulos-de-livros
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sbc-template}[2023/01/01 SBC Article Template]
+
+% Margem e layout
+\RequirePackage[a4paper,top=2.5cm,bottom=2.5cm,left=3cm,right=3cm]{geometry}
+
+% Fontes
+\RequirePackage[T1]{fontenc}
+\RequirePackage{times}
+
+% Espaçamento
+\RequirePackage{setspace}
+\setstretch{1.0}
+
+% Parágrafos
+\setlength{\parindent}{1.27cm}
+\setlength{\parskip}{6pt}
+
+% Título
+\renewcommand{\maketitle}{%
+  \begin{center}
+    {\LARGE\bfseries\@title\par}
+    \vspace{12pt}
+    {\large\@author\par}
+    \vspace{6pt}
+    {\normalsize\@date\par}
+  \end{center}
+  \vspace{12pt}
+}
+
+% Abstract e Resumo
+\renewenvironment{abstract}{%
+  \small
+  \begin{center}
+    \textbf{Abstract}
+  \end{center}
+  \quotation
+}{%
+  \endquotation
+}
+
+\newenvironment{resumo}{%
+  \small
+  \begin{center}
+    \textbf{Resumo}
+  \end{center}
+  \quotation
+}{%
+  \endquotation
+  \vspace{12pt}
+}
+
+% Seções
+\RequirePackage{titlesec}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries}{\thesection.}{0.5em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}{\thesubsection.}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{10pt}{4pt}
+
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\itshape}{\thesubsubsection.}{0.5em}{}
+\titlespacing*{\subsubsection}{0pt}{8pt}{4pt}
+
+% Bibliografia
+\bibliographystyle{sbc}
+\newcommand{\sloppy}{\tolerance=9999\emergencystretch=3em}
+
+\endinput

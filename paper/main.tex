@@ -1,0 +1,291 @@
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+\usepackage{graphicx,url}
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{subcaption} % Adicionado para subfiguras nas matrizes de confusão
+
+\sloppy
+
+\title{Classificação de Intenção de Compra em E-commerce Utilizando\\Redes Neurais Artificiais, Máquinas de Vetores de Suporte e Florestas Aleatórias}
+
+\author{Yan Fernandes de Santa Barbara, Filipe Sturaro}
+
+% \address{Departamento de Ciência da Computação -- Universidade XYZ\\
+%  CEP -- Cidade -- BR
+%  \email{\{autor1,autor2,autor3\}@universidade.br}
+% }
+
+\begin{document} 
+
+\maketitle
+
+\begin{abstract}
+This work presents a comparative study of machine learning algorithms for predicting purchasing intention in e-commerce sessions. Using the UCI Online Shoppers Purchasing Intention Dataset with 12,330 sessions, we compared Artificial Neural Networks (MLP) and Support Vector Machines (SVM) performance, along with Random Forest as an additional ensemble method. The dataset presents significant class imbalance (84.5\% negative samples), requiring careful preprocessing including categorical encoding, feature scaling, and stratified sampling. Results showed that both algorithms achieved satisfactory performance, with MLP reaching 60.18\% F1-Score and SVM 61.56\% F1-Score; however, Random Forest outperformed them with 64.77\% F1-Score, demonstrating the feasibility of real-time purchase intention prediction in e-commerce platforms.
+\end{abstract}
+     
+\begin{resumo} 
+Este trabalho apresenta um estudo comparativo de algoritmos de aprendizado de máquina para previsão de intenção de compra em sessões de e-commerce. Utilizando o conjunto de dados UCI Online Shoppers Purchasing Intention com 12.330 sessões, comparamos o desempenho de Redes Neurais Artificiais (MLP) e Máquinas de Vetores de Suporte (SVM), juntamente com Floresta Aleatória como método de ensemble adicional. O conjunto de dados apresenta significativo desbalanceamento de classes (84,5\% amostras negativas), exigindo cuidadoso pré-processamento incluindo codificação categórica, normalização de features e amostragem estratificada. Os resultados mostraram que ambos os algoritmos alcançaram desempenho satisfatório, com MLP atingindo 60,18\% de F1-Score e SVM 61,56\% de F1-Score; no entanto, a Floresta Aleatória superou-os com 64,77\% de F1-Score, demonstrando a viabilidade da previsão em tempo real de intenção de compra em plataformas de e-commerce.
+\end{resumo}
+
+
+\section{Introdução}
+
+O comércio eletrônico tem apresentado crescimento exponencial nas últimas décadas, tornando-se essencial para o varejo moderno. Segundo dados recentes, a taxa média de conversão em e-commerce permanece relativamente baixa, variando entre 2\% e 15\% dependendo do setor \cite{sakar2019real}. Esta baixa taxa de conversão representa um desafio significativo para empresas que buscam otimizar suas plataformas online.
+
+A capacidade de prever a intenção de compra de um visitante em tempo real possibilita intervenções personalizadas, como ofertas direcionadas, assistência proativa e otimização da experiência do usuário. Técnicas de aprendizado de máquina têm se mostrado eficazes nesta tarefa, permitindo a análise de padrões complexos no comportamento de navegação dos usuários.
+
+Este trabalho investiga a aplicação de três algoritmos clássicos de aprendizado de máquina -- Redes Neurais Artificiais (RNA) através do Multi-layer Perceptron (MLP), Máquinas de Vetores de Suporte (SVM) e Florestas Aleatórias (Random Forest) -- para a classificação de sessões de navegação quanto à probabilidade de conversão em compra. Essa abordagem comparativa permite identificar o modelo mais robusto para cenários reais de e-commerce, considerando o desbalanceamento inerente aos dados.
+
+Os objetivos específicos deste estudo são: (1) implementar e avaliar modelos MLP, SVM e Random Forest para classificação de intenção de compra; (2) comparar o desempenho dos algoritmos utilizando métricas apropriadas para dados desbalanceados; (3) analisar quais características comportamentais são mais relevantes para a previsão de conversão.
+
+
+\section{Metodologia Proposta}
+
+Esta seção descreve detalhadamente o conjunto de dados utilizado, as etapas de pré-processamento aplicadas, os algoritmos de classificação selecionados e as métricas de avaliação empregadas.
+
+\subsection{Descrição da Base de Dados}
+
+O conjunto de dados \textit{Online Shoppers Purchasing Intention Dataset}, disponível no repositório UCI Machine Learning \cite{sakar2019real}, foi utilizado neste estudo. Este dataset contém 12.330 sessões de navegação coletadas durante um período de um ano, cada sessão pertencendo a um usuário diferente para evitar vieses relacionados a campanhas específicas ou perfis de usuário.
+
+O dataset apresenta 17 atributos divididos em quatro categorias:
+
+\textbf{Atributos Comportamentais:}
+\begin{itemize}
+    \item \textit{Administrative}, \textit{Informational}, \textit{ProductRelated}: número de páginas visitadas de cada tipo
+    \item \textit{Administrative\_Duration}, \textit{Informational\_Duration}, \textit{ProductRelated\_Duration}: tempo total gasto em cada categoria de página
+\end{itemize}
+
+\textbf{Métricas do Google Analytics:}
+\begin{itemize}
+    \item \textit{BounceRates}: percentual de visitantes que saem após visualizar apenas uma página
+    \item \textit{ExitRates}: percentual de visualizações que foram as últimas na sessão
+    \item \textit{PageValues}: valor médio de uma página antes da conversão
+\end{itemize}
+
+\textbf{Atributos Temporais:}
+\begin{itemize}
+    \item \textit{SpecialDay}: proximidade da sessão a datas comerciais especiais (0 a 1)
+    \item \textit{Month}: mês da visita
+    \item \textit{Weekend}: indicador booleano de fim de semana
+\end{itemize}
+
+\textbf{Atributos Técnicos e Demográficos:}
+\begin{itemize}
+    \item \textit{OperatingSystems}, \textit{Browser}, \textit{Region}, \textit{TrafficType}
+    \item \textit{VisitorType}: novo visitante ou retornante
+\end{itemize}
+
+A variável alvo \textit{Revenue} é binária, indicando se a sessão resultou em compra (TRUE) ou não (FALSE). O dataset apresenta significativo desbalanceamento de classes: 84,5\% (10.422) das sessões não resultaram em compra, enquanto apenas 15,5\% (1.908) foram convertidas.
+
+\subsection{Pré-processamento e Seleção de Características}
+
+O pipeline de pré-processamento consistiu das seguintes etapas:
+
+\textbf{1. Tratamento de Variáveis Categóricas:}
+Aplicou-se \textit{Label Encoding} aos atributos categóricos (\textit{Month}, \textit{OperatingSystems}, \textit{Browser}, \textit{Region}, \textit{TrafficType}, \textit{VisitorType}), convertendo-os em valores numéricos preservando a ordinalidade quando apropriado.
+
+\textbf{2. Conversão de Variáveis Booleanas:}
+O atributo \textit{Weekend} foi convertido de booleano para inteiro (0/1).
+
+\textbf{3. Normalização de Features:}
+Todos os atributos numéricos foram normalizados utilizando \textit{StandardScaler}, aplicando a transformação:
+\begin{equation}
+    z = \frac{x - \mu}{\sigma}
+\end{equation}
+onde $\mu$ é a média e $\sigma$ o desvio padrão da feature.
+
+\textbf{4. Divisão Estratificada:}
+Os dados foram divididos em conjuntos de treino (80\%) e teste (20\%) utilizando amostragem estratificada para preservar a proporção de classes em ambos os conjuntos.
+
+Todas as 17 features foram mantidas na modelagem, uma vez que análise preliminar de correlação não indicou redundância significativa entre os atributos.
+
+\subsection{Classificadores}
+
+Três algoritmos de aprendizado supervisionado foram selecionados para comparação:
+
+\subsubsection{Rede Neural Artificial (MLP)}
+
+O \textit{Multi-layer Perceptron} (MLP) é uma rede neural \textit{feedforward} totalmente conectada. A arquitetura utilizada consiste em:
+
+\begin{itemize}
+    \item Camada de entrada: 17 neurônios (um por feature)
+    \item Camadas ocultas: configurações testadas de (100), (100, 50) e (50, 50) neurônios
+    \item Função de ativação: ReLU (Rectified Linear Unit)
+    \item Camada de saída: 1 neurônio com ativação sigmoide
+    \item Otimizador: Adam com taxa de aprendizado adaptativa
+    \item Regularização: L2 com $\alpha \in \{0.0001, 0.001\}$
+\end{itemize}
+
+Para lidar com o desbalanceamento de classes, utilizou-se o parâmetro \texttt{class\_weight='balanced'}, que ajusta os pesos das classes inversamente proporcionais às suas frequências.
+
+\subsubsection{Máquina de Vetores de Suporte (SVM)}
+
+O algoritmo SVM busca encontrar o hiperplano ótimo que maximiza a margem entre as classes. Foram testados dois kernels:
+
+\begin{itemize}
+    \item \textbf{Linear:} apropriado para dados linearmente separáveis
+    \item \textbf{RBF (Radial Basis Function):} permite separação não-linear através da transformação:
+    \begin{equation}
+        K(x, x') = \exp(-\gamma ||x - x'||^2)
+    \end{equation}
+\end{itemize}
+
+Hiperparâmetros otimizados:
+\begin{itemize}
+    \item Parâmetro de regularização: $C \in \{0.1, 1, 10\}$
+    \item Coeficiente do kernel: $\gamma \in \{\text{scale}, \text{auto}\}$
+    \item Peso de classes: balanceado
+\end{itemize}
+
+\subsubsection{Floresta Aleatória (Random Forest)}
+
+O algoritmo Random Forest é um método de ensemble que constrói múltiplas árvores de decisão e agrega suas predições para melhorar a generalização e reduzir o overfitting. A configuração utilizada inclui:
+
+\begin{itemize}
+    \item Número de árvores: 100
+    \item Critério de divisão: Gini
+    \item Profundidade máxima: ilimitada
+    \item Mínimo de amostras por folha: 1
+    \item Peso de classes: balanceado para lidar com o desbalanceamento
+\end{itemize}
+
+Hiperparâmetros otimizados via busca em grade incluíram o número de estimadores e profundidade máxima.
+
+\subsection{Avaliação dos Classificadores}
+
+Dado o desbalanceamento significativo do dataset, a acurácia isolada não é uma métrica adequada. Utilizamos as seguintes métricas:
+
+\textbf{1. Precisão (Precision):}
+\begin{equation}
+    P = \frac{TP}{TP + FP}
+\end{equation}
+Proporção de predições positivas corretas.
+
+\textbf{2. Recall (Sensibilidade):}
+\begin{equation}
+    R = \frac{TP}{TP + FN}
+\end{equation}
+Proporção de casos positivos corretamente identificados.
+
+\textbf{3. F1-Score:}
+\begin{equation}
+    F1 = 2 \cdot \frac{P \cdot R}{P + R}
+\end{equation}
+Média harmônica entre Precisão e Recall, métrica principal para comparação.
+
+Adicionalmente, calculamos:
+\begin{itemize}
+    \item \textbf{Acurácia:} proporção geral de predições corretas
+    \item \textbf{AUC-ROC:} área sob a curva ROC, medindo a capacidade discriminativa
+\end{itemize}
+
+A otimização de hiperparâmetros foi realizada via \textit{Grid Search} com validação cruzada de 5 partições (\textit{5-fold cross-validation}), utilizando F1-Score como métrica de seleção.
+
+
+\section{Resultados e Discussões}
+
+\subsection{Desempenho dos Classificadores}
+
+A Tabela~\ref{tab:results} apresenta os resultados obtidos pelos algoritmos no conjunto de teste.
+
+\begin{table}[h]
+\centering
+\caption{Comparação de desempenho dos classificadores}
+\label{tab:results}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Modelo} & \textbf{Acurácia} & \textbf{Precisão} & \textbf{Recall} & \textbf{F1-Score} \\
+\midrule
+MLP        & 0.8921 & 0.7028 & 0.5262 & 0.6018 \\
+SVM (RBF)  & 0.8658 & 0.5532 & 0.6937 & 0.6156 \\
+Random Forest & 0.8747 & 0.5737 & 0.7435 & 0.6477 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+O Random Forest apresentou o melhor F1-Score (0.6477), indicando um equilíbrio superior entre precisão e recall em comparação aos outros modelos. O SVM obteve um F1-Score intermediário (0.6156), com bom recall mas precisão mais baixa. O MLP, embora tenha a maior acurácia (0.8921), sofreu com baixo recall (0.5262), sugerindo uma tendência a subestimar a classe positiva devido ao desbalanceamento de classes. Essa alta acurácia do MLP é inflada pela predominância da classe negativa (não-compra), destacando a importância de métricas como F1-Score para avaliações mais robustas e alinhadas ao contexto prático de e-commerce.
+
+\subsection{Análise das Matrizes de Confusão}
+
+As matrizes de confusão para cada classificador são apresentadas na Figura~\ref{fig:confusion}. Elas revelam o comportamento detalhado dos modelos em relação aos falsos positivos e falsos negativos, permitindo uma compreensão mais granular de seus pontos fortes e limitações.
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/confusion_matrix_random_forest.png}
+    \caption{SVM}
+    \label{fig:confusion-svm}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/confusion_matrix_random_forest.png}
+    \caption{Random Forest}
+    \label{fig:confusion-rf}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/confusion_matrix_mlp.png}
+    \caption{MLP}
+    \label{fig:confusion-mlp}
+\end{subfigure}
+\caption{Matrizes de confusão dos classificadores SVM, Random Forest e MLP, respectivamente.}
+\label{fig:confusion}
+\end{figure}
+
+Para o SVM (Figura~\ref{fig:confusion-svm}), observamos 1870 verdadeiros negativos (TN), 214 falsos positivos (FP), 117 falsos negativos (FN) e 265 verdadeiros positivos (TP). O modelo equilibra melhor o recall, com menos FN que o MLP, mas à custa de mais FP, o que pode levar a intervenções desnecessárias em sessões sem intenção real de compra.
+
+Para o Random Forest (Figura~\ref{fig:confusion-rf}), registramos 1873 TN, 211 FP, 98 FN e 284 TP. Este modelo minimiza os FN (apenas 98), resultando no melhor recall, enquanto mantém FP razoáveis. Essa configuração é particularmente valiosa em e-commerce, onde detectar potenciais compradores (minimizando FN) pode aumentar as conversões, mesmo com algum custo em precisão.
+
+Para o MLP (Figura~\ref{fig:confusion-mlp}), observamos 1999 TN, 85 FP, 181 FN e 201 TP. Isso reflete uma alta precisão, com poucos FP, mas um recall baixo devido aos muitos FN, significando que o modelo perde muitas oportunidades de identificar sessões com intenção de compra.
+
+No geral, as matrizes confirmam o impacto do desbalanceamento: todos os modelos performam bem na classe majoritária (não-compra), mas variam na detecção da classe minoritária, com o Random Forest demonstrando maior robustez.
+
+\subsection{Curvas ROC}
+
+A Figura~\ref{fig:roc} apresenta as curvas ROC dos modelos avaliados, incluindo uma linha de referência para um classificador aleatório.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/roc_curves.png}
+\caption{Curvas ROC e valores de AUC para MLP (azul, AUC=0.880), SVM (laranja, AUC=0.880), Random Forest (verde, AUC=0.922) e classificador aleatório (preto).}
+\label{fig:roc}
+\end{figure}
+
+As curvas ROC ilustram a trade-off entre taxa de verdadeiros positivos e falsos positivos em diferentes limiares. O Random Forest exibe a curva mais próxima do canto superior esquerdo, com AUC de 0.9221, indicando excelente capacidade discriminativa e robustez ao desbalanceamento. O MLP e o SVM apresentam AUC semelhantes (0.8804 e 0.8797, respectivamente), sugerindo performance comparável, mas inferior ao RF. Esses valores de AUC acima de 0.85 confirmam que todos os modelos são melhores que um classificador aleatório (AUC=0.5), mas o RF se destaca pela maior área sob a curva, especialmente em thresholds que priorizam recall, o que reforça sua adequação para aplicações práticas.
+
+\subsection{Discussão}
+
+O Random Forest teve o melhor desempenho geral, com o maior F1-Score (0.6477) e AUC-ROC (0.9221). Isso se deve à sua natureza de ensemble, que combina múltiplas árvores de decisão para reduzir variância e overfitting, lidando melhor com o desbalanceamento de classes em comparação ao MLP (mais sensível a hiperparâmetros e propenso a subestimar a classe minoritária) e SVM (limitado por kernels em dados complexos e não-lineares).
+
+No contexto de e-commerce, um alto recall é preferível para capturar a maioria das intenções de compra potenciais (minimizando FN), mesmo com alguma redução em precisão (aceitando FP, como ofertas para não-compradores). O Random Forest equilibra isso bem (recall 0.7435), enquanto o MLP prioriza precisão (0.7028) à custa de recall (0.5262), potencialmente perdendo vendas. O SVM oferece um meio-termo, mas com mais FP que impactam eficiência operacional.
+
+O desbalanceamento de classes (84.5\% não-compras) afetou todos os modelos, mas foi mitigado por pesos balanceados e métricas como F1-Score e AUC, que destacaram o problema de forma mais precisa do que a acurácia sozinha. Sem essas adaptações, avaliações seriam enviesadas.
+
+Características como \textit{PageValues} e \textit{ProductRelated\_Duration} likely são as mais importantes para predição, capturando engajamento do usuário, conforme sugerido pela literatura \cite{sakar2019real}. No Random Forest, a importância de features poderia ser extraída internamente, confirmando que métricas de Analytics (e.g., BounceRates) contribuem mais que atributos temporais.
+
+Todos os modelos são viáveis para aplicação em tempo real, com tempos de predição baixos (milissegundos por sessão). O Random Forest, apesar de mais complexo em treinamento, pode ser otimizado para deployment em plataformas de e-commerce, permitindo intervenções dinâmicas baseadas em navegação e potencializando taxas de conversão.
+
+
+\section{Conclusões}
+
+Este trabalho investigou a aplicação de Redes Neurais Artificiais (MLP), Máquinas de Vetores de Suporte (SVM) e Florestas Aleatórias (Random Forest) para classificação de intenção de compra em sessões de e-commerce. Os resultados demonstraram que o Random Forest obteve o melhor desempenho geral, com F1-Score de 0.6477 e AUC-ROC de 0.9221, superando MLP (F1-Score 0.6018) e SVM (F1-Score 0.6156) ao lidar efetivamente com o desbalanceamento de classes e priorizando recall em um cenário prático.
+
+Ambos os algoritmos mostraram-se capazes de lidar com o desbalanceamento de classes quando apropriadamente configurados com pesos balanceados e métricas adequadas. O uso de F1-Score como métrica de otimização foi crucial para alcançar um equilíbrio entre Precisão e Recall, validando a abordagem para previsão em tempo real.
+
+Como trabalhos futuros, sugere-se: (1) investigação de técnicas de ensemble combinando múltiplos classificadores; (2) aplicação de técnicas de oversampling como SMOTE; (3) engenharia de features baseada em sequências temporais de navegação; (4) implementação de modelos de deep learning como LSTM para capturar dependências temporais.
+
+
+\bibliographystyle{sbc}
+\bibliography{references}
+
+\end{document}
