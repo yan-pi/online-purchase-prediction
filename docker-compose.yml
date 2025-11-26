@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  jupyter:
+    build: .
+    container_name: online-dataset-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    working_dir: /app
